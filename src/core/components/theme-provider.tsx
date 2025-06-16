@@ -1,11 +1,26 @@
-'use client'
+import React, { createContext, useContext, useEffect, useState } from "react"
 
-import * as React from 'react'
-import {
-  ThemeProvider as NextThemesProvider,
-  type ThemeProviderProps,
-} from 'next-themes'
+const ThemeContext = createContext({
+  theme: "light",
+  setTheme: (theme: "light" | "dark") => {},
+})
 
-export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
-  return <NextThemesProvider {...props}>{children}</NextThemesProvider>
+export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
+  const [theme, setTheme] = useState<"light" | "dark">(() => {
+    return localStorage.getItem("theme") === "dark" ? "dark" : "light"
+  })
+
+  useEffect(() => {
+    document.documentElement.classList.remove("light", "dark")
+    document.documentElement.classList.add(theme)
+    localStorage.setItem("theme", theme)
+  }, [theme])
+
+  return (
+    <ThemeContext.Provider value={{ theme, setTheme }}>
+      {children}
+    </ThemeContext.Provider>
+  )
 }
+
+export const useTheme = () => useContext(ThemeContext)

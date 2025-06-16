@@ -69,28 +69,6 @@ export function LoginView() {
             </Button>
           </form>
 
-          <div className="space-y-4">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <Separator className="w-full" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-gray-500">Ou continue com</span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <Button variant="outline" onClick={() => handleSocialLogin("google")} disabled={isLoading}>
-                <Chrome className="w-4 h-4 mr-2" />
-                Google
-              </Button>
-              <Button variant="outline" onClick={() => handleSocialLogin("microsoft")} disabled={isLoading}>
-                <Microsoft className="w-4 h-4 mr-2" />
-                Microsoft
-              </Button>
-            </div>
-          </div>
-
           <div className="text-center text-sm">
             Não tem uma conta?{" "}
             <Link to="/register" className="text-blue-600 hover:underline">
