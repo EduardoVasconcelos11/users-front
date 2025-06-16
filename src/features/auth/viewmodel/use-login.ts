@@ -36,28 +36,27 @@ export function useLogin() {
 
     setIsLoading(true)
     try {
-      // const response = await authService.login(credentials)
+      const response = await authService.login(credentials)
 
-      // if (response.success && response.data) {
-      //   login(response.data.user, response.data.token)
-      //   toast({
-      //     title: "Login realizado com sucesso!",
-      //     description: `Bem-vindo, ${response.data.user.name}!`,
-      //   })
+      if (response.success && response.data) {
+        login(response.data.user, response.data.token)
+        toast({
+          title: "Login realizado com sucesso!",
+          description: `Bem-vindo, ${response.data.user.name}!`,
+        })
 
-        // Redirecionar baseado no papel do usuário
-        // if (response.data.user.role === "admin") {
-        navigate("/users")
-        // } else {
-        //   router.push("/profile")
-        // }
-      // } else {
-      //   toast({
-      //     title: "Erro no login",
-      //     description: response.error || "Credenciais inválidas",
-      //     variant: "destructive",
-      //   })
-      // }
+        if (response.data.user.role === "admin") {
+          navigate("/users")
+        } else {
+          navigate("/profile")
+        }
+      } else {
+        toast({
+          title: "Erro no login",
+          description: response.error || "Credenciais inválidas",
+          variant: "destructive",
+        })
+      }
     } catch (error) {
       toast({
         title: "Erro no login",

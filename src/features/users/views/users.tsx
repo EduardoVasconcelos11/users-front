@@ -1,13 +1,12 @@
 import { useState } from "react"
 import { useUsers } from "../viewmodel/use-users"
-// import { userService } from "@/features/users/repository/user.service"
 import { toast } from "@/core/hooks/use-toast"
 import { ProtectedRoute } from "@/core/components/protected-route"
 import { Header } from "@/core/components/layout/header"
 import { Card, CardContent, CardHeader, CardTitle } from "@/core/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/core/components/ui/dialog"
 import { Button } from "@/core/components/ui/button"
-import { Edit, Search, Trash2, UserPlus } from "lucide-react"
+import { Edit, Trash2, UserPlus } from "lucide-react"
 import { Label } from "@/core/components/ui/label"
 import { Input } from "@/core/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/core/components/ui/select"
@@ -16,6 +15,7 @@ import { Badge } from "@/core/components/ui/badge"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/core/components/ui/alert-dialog"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
+import { userService } from "../repository/user.service"
 
 export function UsersView() {
   const {
@@ -28,16 +28,22 @@ export function UsersView() {
     sortBy,
     setSortBy,
     deleteUser,
+    createUser,
     refetch,
   } = useUsers()
 
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const [editingUserId, setEditingUserId] = useState<string | null>(null)
+
   const [newUserForm, setNewUserForm] = useState({
     name: "",
     email: "",
     password: "",
     role: "user" as "admin" | "user",
+    status: "ativo" as "ativo" | "inativo",
   })
+
   const [isCreating, setIsCreating] = useState(false)
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
 
@@ -46,11 +52,23 @@ export function UsersView() {
   }
 
   const getStatusColor = (status: string) => {
-    return status === "active" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+    return status === "ativo" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
   }
 
-  const createUser = async () => {
-    // Validate form
+  const handleEditUser = (user: any) => {
+    setIsModalOpen(true)
+    setIsEditing(true)
+    setEditingUserId(user.id)
+    setNewUserForm({
+      name: user.name,
+      email: user.email,
+      password: "",
+      role: user.role,
+      status: user.status,
+    })
+  }
+
+  const handleSubmitUser = async () => {
     const errors: Record<string, string> = {}
 
     if (!newUserForm.name.trim()) {
@@ -65,39 +83,65 @@ export function UsersView() {
       errors.email = "Email inválido"
     }
 
-    if (!newUserForm.password.trim()) {
-      errors.password = "Senha é obrigatória"
-    } else if (newUserForm.password.length < 6) {
-      errors.password = "Senha deve ter pelo menos 6 caracteres"
+    if (!isEditing) {
+      if (!newUserForm.password.trim()) {
+        errors.password = "Senha é obrigatória"
+      } else if (newUserForm.password.length < 6) {
+        errors.password = "Senha deve ter pelo menos 6 caracteres"
+      }
     }
 
     setFormErrors(errors)
-
     if (Object.keys(errors).length > 0) return
 
     setIsCreating(true)
     try {
-      // const response = await userService.createUser(newUserForm)
-      // if (response.success) {
-      //   toast({
-      //     title: "Usuário criado",
-      //     description: "Usuário foi criado com sucesso",
-      //   })
-      //   setIsModalOpen(false)
-      //   setNewUserForm({ name: "", email: "", password: "", role: "user" })
-      //   setFormErrors({})
-      //   refetch() // Recarregar a lista
-      // } else {
-      //   toast({
-      //     title: "Erro ao criar usuário",
-      //     description: response.error || "Erro interno",
-      //     variant: "destructive",
-      //   })
-      // }
-      console.log('funfou');
-    } catch (error) {
+      if (isEditing && editingUserId) {
+        const updatePayload: any = {
+          name: newUserForm.name,
+          email: newUserForm.email,
+          role: newUserForm.role,
+          status: newUserForm.status,
+        }
+
+        if (newUserForm.password.trim()) {
+          updatePayload.password = newUserForm.password
+        }
+
+        const response = await userService.updateUser(editingUserId, updatePayload)
+
+        if (response.success) {
+          toast({ title: "Usuário atualizado", description: "Dados atualizados com sucesso" })
+          refetch()
+        } else {
+          toast({
+            title: "Erro ao atualizar usuário",
+            description: response.error || "Erro interno",
+            variant: "destructive",
+          })
+        }
+      } else {
+        const response = await userService.createUser(newUserForm)
+        if (response.success) {
+          toast({ title: "Usuário criado", description: "Usuário foi criado com sucesso" })
+          refetch()
+        } else {
+          toast({
+            title: "Erro ao criar usuário",
+            description: response.error || "Erro interno",
+            variant: "destructive",
+          })
+        }
+      }
+
+      setIsModalOpen(false)
+      setNewUserForm({ name: "", email: "", password: "", role: "user", status: "ativo" })
+      setFormErrors({})
+      setEditingUserId(null)
+      setIsEditing(false)
+    } catch {
       toast({
-        title: "Erro ao criar usuário",
+        title: "Erro interno",
         description: "Erro interno do servidor",
         variant: "destructive",
       })
@@ -110,13 +154,23 @@ export function UsersView() {
     <ProtectedRoute requiredRole="admin">
       <div className="min-h-screen bg-gray-50">
         <Header />
-
         <div className="container mx-auto px-4 py-8">
           <Card>
             <CardHeader>
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <CardTitle className="text-2xl font-bold">Gerenciar Usuários</CardTitle>
-                <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+                <Dialog
+                  open={isModalOpen}
+                  onOpenChange={(open) => {
+                    setIsModalOpen(open)
+                    if (!open) {
+                      setIsEditing(false)
+                      setEditingUserId(null)
+                      setFormErrors({})
+                      setNewUserForm({ name: "", email: "", password: "", role: "user", status: "ativo" })
+                    }
+                  }}
+                >
                   <DialogTrigger asChild>
                     <Button>
                       <UserPlus className="w-4 h-4 mr-2" />
@@ -125,8 +179,12 @@ export function UsersView() {
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-md">
                     <DialogHeader>
-                      <DialogTitle>Criar Novo Usuário</DialogTitle>
-                      <DialogDescription>Preencha os dados para criar um novo usuário no sistema.</DialogDescription>
+                      <DialogTitle>{isEditing ? "Editar Usuário" : "Criar Novo Usuário"}</DialogTitle>
+                      <DialogDescription>
+                        {isEditing
+                          ? "Atualize os dados do usuário selecionado."
+                          : "Preencha os dados para criar um novo usuário no sistema."}
+                      </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-4 py-4">
@@ -134,7 +192,6 @@ export function UsersView() {
                         <Label htmlFor="modal-name">Nome</Label>
                         <Input
                           id="modal-name"
-                          placeholder="Nome completo"
                           value={newUserForm.name}
                           onChange={(e) => setNewUserForm((prev) => ({ ...prev, name: e.target.value }))}
                         />
@@ -146,24 +203,24 @@ export function UsersView() {
                         <Input
                           id="modal-email"
                           type="email"
-                          placeholder="email@exemplo.com"
                           value={newUserForm.email}
                           onChange={(e) => setNewUserForm((prev) => ({ ...prev, email: e.target.value }))}
                         />
                         {formErrors.email && <p className="text-sm text-red-600">{formErrors.email}</p>}
                       </div>
 
-                      <div className="space-y-2">
-                        <Label htmlFor="modal-password">Senha</Label>
-                        <Input
-                          id="modal-password"
-                          type="password"
-                          placeholder="Senha (mín. 6 caracteres)"
-                          value={newUserForm.password}
-                          onChange={(e) => setNewUserForm((prev) => ({ ...prev, password: e.target.value }))}
-                        />
-                        {formErrors.password && <p className="text-sm text-red-600">{formErrors.password}</p>}
-                      </div>
+                      {!isEditing && (
+                        <div className="space-y-2">
+                          <Label htmlFor="modal-password">Senha</Label>
+                          <Input
+                            id="modal-password"
+                            type="password"
+                            value={newUserForm.password}
+                            onChange={(e) => setNewUserForm((prev) => ({ ...prev, password: e.target.value }))}
+                          />
+                          {formErrors.password && <p className="text-sm text-red-600">{formErrors.password}</p>}
+                        </div>
+                      )}
 
                       <div className="space-y-2">
                         <Label htmlFor="modal-role">Papel</Label>
@@ -182,6 +239,24 @@ export function UsersView() {
                           </SelectContent>
                         </Select>
                       </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="modal-status">Status</Label>
+                        <Select
+                          value={newUserForm.status}
+                          onValueChange={(value: "ativo" | "inativo") =>
+                            setNewUserForm((prev) => ({ ...prev, status: value }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="ativo">Ativo</SelectItem>
+                            <SelectItem value="inativo">Inativo</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
 
                     <DialogFooter>
@@ -189,56 +264,24 @@ export function UsersView() {
                         variant="outline"
                         onClick={() => {
                           setIsModalOpen(false)
-                          setNewUserForm({ name: "", email: "", password: "", role: "user" })
+                          setIsEditing(false)
+                          setEditingUserId(null)
                           setFormErrors({})
+                          setNewUserForm({ name: "", email: "", password: "", role: "user", status: "ativo" })
                         }}
                       >
                         Cancelar
                       </Button>
-                      <Button onClick={createUser} disabled={isCreating}>
-                        {isCreating ? "Criando..." : "Criar Usuário"}
+                      <Button onClick={handleSubmitUser} disabled={isCreating}>
+                        {isCreating ? (isEditing ? "Salvando..." : "Criando...") : isEditing ? "Salvar Alterações" : "Criar Usuário"}
                       </Button>
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>
               </div>
             </CardHeader>
+
             <CardContent>
-              {/* Filtros */}
-              <div className="flex flex-col sm:flex-row gap-4 mb-6">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    placeholder="Buscar por nome ou email..."
-                    className="pl-10"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
-
-                <Select value={roleFilter} onValueChange={(value: any) => setRoleFilter(value)}>
-                  <SelectTrigger className="w-full sm:w-48">
-                    <SelectValue placeholder="Filtrar por papel" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos os papéis</SelectItem>
-                    <SelectItem value="admin">Administrador</SelectItem>
-                    <SelectItem value="user">Usuário</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
-                  <SelectTrigger className="w-full sm:w-48">
-                    <SelectValue placeholder="Ordenar por" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="name">Nome</SelectItem>
-                    <SelectItem value="createdAt">Data de criação</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Tabela */}
               {isLoading ? (
                 <div className="flex justify-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
@@ -268,13 +311,13 @@ export function UsersView() {
                           </TableCell>
                           <TableCell>
                             <Badge className={getStatusColor(user.status)}>
-                              {user.status === "active" ? "Ativo" : "Inativo"}
+                              {user.status === "ativo" ? "Ativo" : "Inativo"}
                             </Badge>
                           </TableCell>
                           <TableCell>{format(new Date(user.createdAt), "dd/MM/yyyy", { locale: ptBR })}</TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
-                              <Button variant="outline" size="sm">
+                              <Button variant="outline" size="sm" onClick={() => handleEditUser(user)}>
                                 <Edit className="w-4 h-4" />
                               </Button>
                               <AlertDialog>
@@ -287,8 +330,7 @@ export function UsersView() {
                                   <AlertDialogHeader>
                                     <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                      Tem certeza que deseja excluir o usuário {user.name}? Esta ação não pode ser
-                                      desfeita.
+                                      Tem certeza que deseja excluir o usuário {user.name}? Esta ação não pode ser desfeita.
                                     </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>

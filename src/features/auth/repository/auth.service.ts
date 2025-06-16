@@ -1,7 +1,7 @@
 import { ApiResponse, AuthResponse, LoginCredentials, RegisterData } from "@/features/users/models/user"
 
 class AuthService {
-  private baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3001/api";
+  private baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
   async login(credentials: LoginCredentials): Promise<ApiResponse<AuthResponse>> {
     try {

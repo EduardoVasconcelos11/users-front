@@ -3,7 +3,7 @@ export interface User {
   name: string
   email: string
   role: "admin" | "user"
-  status: "active" | "inactive"
+  status: "ativo" | "inativo"
   createdAt: string
   updatedAt: string
 }
@@ -19,10 +19,13 @@ export interface RegisterData {
   password: string
 }
 
-export interface UpdateProfileData {
+export type UpdateProfileData = {
   name?: string
-  password?: string
+  password?:string
+  email?: string
+  role?: "admin" | "user"
 }
+
 
 export interface AuthResponse {
   user: User

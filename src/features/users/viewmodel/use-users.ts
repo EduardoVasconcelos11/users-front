@@ -15,17 +15,17 @@ export function useUsers() {
   const fetchUsers = async () => {
     setIsLoading(true)
     try {
-      // const response = await userService.getAllUsers()
-      // if (response.success && response.data) {
-        // setUsers(response.data)
-        // setFilteredUsers(response.data)
-      // } else {
-      //   toast({
-      //     title: "Erro ao carregar usuários",
-      //     description: response.error || "Erro interno",
-      //     variant: "destructive",
-      //   })
-      // }
+      const response = await userService.getAllUsers()
+      if (response.success && response.data) {
+        setUsers(response.data)
+        setFilteredUsers(response.data)
+      } else {
+        toast({
+          title: "Erro ao carregar usuários",
+          description: response.error || "Erro interno",
+          variant: "destructive",
+        })
+      }
       console.log('funfou');
     } catch (error) {
       toast({
@@ -40,21 +40,21 @@ export function useUsers() {
 
   const deleteUser = async (userId: string) => {
     try {
-      // const response = await userService.deleteUser(userId)
-      // if (response.success) {
-      //   setUsers((prev) => prev.filter((user) => user.id !== userId))
-      //   setFilteredUsers((prev) => prev.filter((user) => user.id !== userId))
-      //   toast({
-      //     title: "Usuário excluído",
-      //     description: "Usuário foi excluído com sucesso",
-      //   })
-      // } else {
-      //   toast({
-      //     title: "Erro ao excluir usuário",
-      //     description: response.error || "Erro interno",
-      //     variant: "destructive",
-      //   })
-      // }
+      const response = await userService.deleteUser(userId)
+      if (response.success) {
+        setUsers((prev) => prev.filter((user) => user.id !== userId))
+        setFilteredUsers((prev) => prev.filter((user) => user.id !== userId))
+        toast({
+          title: "Usuário excluído",
+          description: "Usuário foi excluído com sucesso",
+        })
+      } else {
+        toast({
+          title: "Erro ao excluir usuário",
+          description: response.error || "Erro interno",
+          variant: "destructive",
+        })
+      }
       console.log('funfou');
     } catch (error) {
       toast({

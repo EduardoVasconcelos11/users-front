@@ -30,22 +30,21 @@ export function useProfile() {
 
     setIsLoading(true)
     try {
-      // const response = await userService.updateProfile(user.id, data)
+      const response = await userService.updateProfile(user.id, data)
 
-      // if (response.success && response.data) {
-        // Atualizar o usuário no contexto
-        // login(response.data, localStorage.getItem("token") || "")
-      //   toast({
-      //     title: "Perfil atualizado",
-      //     description: "Suas informações foram atualizadas com sucesso",
-      //   })
-      // } else {
-      //   toast({
-      //     title: "Erro ao atualizar perfil",
-      //     description: response.error || "Erro interno",
-      //     variant: "destructive",
-      //   })
-      // }
+      if (response.success && response.data) {
+        login(response.data, localStorage.getItem("token") || "")
+        toast({
+          title: "Perfil atualizado",
+          description: "Suas informações foram atualizadas com sucesso",
+        })
+      } else {
+        toast({
+          title: "Erro ao atualizar perfil",
+          description: response.error || "Erro interno",
+          variant: "destructive",
+        })
+      }
       console.log('funfou');
     } catch (error) {
       toast({
